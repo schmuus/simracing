@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Apex Log – AMS2 Strecken-Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0b0b0d;
+    --bg-alt: #0f1013;
+    --surface: #16171b;
+    --surface-2: #1c1e23;
+    --border: #2a2c32;
+    --red: #e10600;
+    --red-light: #ff453a;
+    --text: #f2f2f0;
+    --text-muted: #8a8d93;
+    --font-display: 'Oswald', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    margin: 0;
+  }
+
+  .flag-strip {
+    height: 6px;
+    width: 100%;
+    background-image: repeating-linear-gradient(
+      90deg,
+      var(--red) 0px, var(--red) 14px,
+      #1a1a1a 14px, #1a1a1a 28px
+    );
+    opacity: 0.9;
+  }
+
+  .site-header {
+    background: linear-gradient(180deg, var(--bg-alt), var(--bg));
+    border-bottom: 1px solid var(--border);
+    padding: 28px 20px 22px;
+  }
+
+  .header-inner {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 6px;
+  }
+
+  .site-header h1 {
+    font-size: clamp(1.8rem, 5vw, 2.6rem);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    position: relative;
+    display: inline-block;
+  }
+
+  .site-header h1::after {
+    content: "";
+    position: absolute;
+    left: 2px;
+    bottom: -6px;
+    width: 46px;
+    height: 4px;
+    background: var(--red);
+  }
+
+  main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
+
+  section + section { margin-top: 44px; }
+
+  .new-entry {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 22px 26px;
+  }
+
+  .new-entry h2, .entries h2 {
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .count-badge {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 2px 9px;
+    border-radius: 999px;
+    letter-spacing: 0;
+  }
+
+  #entry-form {
+    display: grid;
+    gap: 16px;
+  }
+
+  .field {
+    display: grid;
+    gap: 6px;
+  }
+
+  .field label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .field input[type="text"] {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 11px 12px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+  }
+
+  .field input[type="text"]:focus,
+  .file-upload-btn:focus-visible,
+  .btn-primary:focus-visible,
+  .vote-btn:focus-visible {
+    outline: 2px solid var(--red-light);
+    outline-offset: 2px;
+  }
+
+  .field input[type="text"]::placeholder { color: #55575e; }
+
+  .file-upload {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .file-upload input[type="file"] {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .file-upload-btn {
+    background: transparent;
+    border: 1px solid var(--red);
+    color: var(--red-light);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    padding: 9px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .file-upload-btn:hover {
+    background: var(--red);
+    color: #fff;
+  }
+
+  .file-name {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  .image-preview {
+    margin-top: 4px;
+    width: 100%;
+    max-width: 260px;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+
+  .btn-primary {
+    justify-self: start;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 12px 26px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  .btn-primary:hover { background: var(--red-light); }
+  .btn-primary:active { transform: scale(0.98); }
+
+  .form-error {
+    font-size: 0.8rem;
+    color: var(--red-light);
+    margin: -6px 0 0;
+  }
+
+  .entries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 18px;
+  }
+
+  .entry-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: rise 0.35s ease both;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .entry-card:hover {
+    border-color: #3a3d45;
+    transform: translateY(-2px);
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .entry-image-wrap {
+    aspect-ratio: 16 / 9;
+    background: var(--surface-2);
+    overflow: hidden;
+  }
+
+  .entry-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .entry-body {
+    padding: 14px 16px 6px;
+    flex: 1;
+  }
+
+  .entry-car {
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+  }
+
+  .entry-track {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .entry-vote {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 12px 16px 16px;
+  }
+
+  .vote-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+
+  .vote-btn svg { width: 15px; height: 15px; }
+
+  .vote-up:hover { border-color: var(--red); color: var(--red-light); }
+  .vote-down:hover { border-color: #5b5d63; color: var(--text); }
+
+  .vote-score {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.3rem;
+    min-width: 42px;
+    text-align: center;
+    position: relative;
+    padding: 2px 0;
+  }
+
+  .vote-score.positive { color: var(--red-light); }
+  .vote-score.negative { color: var(--text-muted); }
+
+  .empty-state {
+    display: none;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 40px 20px;
+  }
+
+  .empty-state.visible { display: block; }
+
+  .site-footer {
+    text-align: center;
+    color: #55575e;
+    font-size: 0.75rem;
+    padding: 20px;
+    letter-spacing: 0.02em;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .entry-card, .btn-primary, .vote-btn, .file-upload-btn {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="flag-strip" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <p class="eyebrow">Automobilista&nbsp;2 — Session Log</p>
+    <h1>Apex Log</h1>
+  </div>
+</header>
+
+<main>
+  <section class="new-entry" aria-labelledby="new-entry-heading">
+    <h2 id="new-entry-heading">Neue Kombination eintragen</h2>
+    <form id="entry-form" novalidate>
+      <div class="field">
+        <label for="car">Auto</label>
+        <input type="text" id="car" name="car" placeholder="z. B. Porsche 992 Cup" required />
+      </div>
+      <div class="field">
+        <label for="track">Strecke</label>
+        <input type="text" id="track" name="track" placeholder="z. B. Interlagos GP" required />
+      </div>
+      <div class="field">
+        <label for="image">Bild</label>
+        <div class="file-upload">
+          <input type="file" id="image" name="image" accept="image/*" />
+          <label for="image" class="file-upload-btn">Datei wählen</label>
+          <span class="file-name" id="file-name">Keine Datei ausgewählt</span>
+        </div>
+        <img id="image-preview" class="image-preview" alt="" hidden />
+      </div>
+      <p class="form-error" id="form-error" hidden></p>
+      <button type="submit" class="btn-primary">Eintragen</button>
+    </form>
+  </section>
+
+  <section class="entries" aria-labelledby="entries-heading">
+    <h2 id="entries-heading">Kombinationen <span id="entry-count" class="count-badge">0</span></h2>
+    <div id="entries-grid" class="entries-grid"></div>
+    <p id="empty-state" class="empty-state">Noch keine Strecken-Kombination geloggt. Leg los und trag deine erste Session ein.</p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>Aktuell nur für diese Sitzung gespeichert · Firebase-Sync folgt</p>
+</footer>
+
+<script>
+  /* ============================================================
+     DATENSCHICHT
+     Aktuell: In-Memory-Array (Daten gehen beim Neuladen verloren).
+
+     Geplante Migration auf Firebase (Firestore + Storage):
+     - Collection "entries" mit Feldern { car, track, imageUrl, score, createdAt }
+     - addEntry()  -> addDoc(collection(db, "entries"), {...})
+     - getEntries()-> onSnapshot(collection(db, "entries"), ...) für Live-Updates
+     - vote()      -> updateDoc(doc(db, "entries", id), { score: increment(delta) })
+     - Bild-Upload -> uploadBytes() zu Firebase Storage, dann getDownloadURL()
+       statt des lokalen Base64-Data-URLs.
+     Die Funktionssignaturen unten sind bewusst async gehalten, damit
+     der Umstieg später ohne Änderungen am UI-Code möglich ist.
+     ============================================================ */
+  const DataStore = (() => {
+    let entries = [];
+
+    return {
+      async getEntries() {
+        return [...entries].sort((a, b) => b.score - a.score);
+      },
+      async addEntry(entry) {
+        entries.push(entry);
+        return entry;
+      },
+      async vote(id, delta) {
+        const entry = entries.find((e) => e.id === id);
+        if (entry) entry.score += delta;
+        return entry;
+      },
+    };
+  })();
+
+  // ---------- Hilfsfunktionen ----------
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function resizeImage(file, maxWidth = 640, quality = 0.82) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, maxWidth / img.width);
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ---------- DOM-Referenzen ----------
+
+  const form = document.getElementById('entry-form');
+  const carInput = document.getElementById('car');
+  const trackInput = document.getElementById('track');
+  const imageInput = document.getElementById('image');
+  const fileNameLabel = document.getElementById('file-name');
+  const imagePreview = document.getElementById('image-preview');
+  const formError = document.getElementById('form-error');
+  const grid = document.getElementById('entries-grid');
+  const emptyState = document.getElementById('empty-state');
+  const entryCount = document.getElementById('entry-count');
+
+  let pendingImage = null;
+
+  const iconUp = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>`;
+  const iconDown = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>`;
+
+  // ---------- Bild-Auswahl ----------
+
+  imageInput.addEventListener('change', async () => {
+    const file = imageInput.files[0];
+    if (!file) {
+      fileNameLabel.textContent = 'Keine Datei ausgewählt';
+      imagePreview.hidden = true;
+      pendingImage = null;
+      return;
+    }
+    fileNameLabel.textContent = file.name;
+    pendingImage = await resizeImage(file);
+    imagePreview.src = pendingImage;
+    imagePreview.hidden = false;
+  });
+
+  // ---------- Formular absenden ----------
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const car = carInput.value.trim();
+    const track = trackInput.value.trim();
+
+    if (!car || !track || !pendingImage) {
+      formError.textContent = 'Bitte Auto, Strecke und ein Bild angeben.';
+      formError.hidden = false;
+      return;
+    }
+    formError.hidden = true;
+
+    await DataStore.addEntry({
+      id: crypto.randomUUID(),
+      car,
+      track,
+      image: pendingImage,
+      score: 0,
+    });
+
+    form.reset();
+    fileNameLabel.textContent = 'Keine Datei ausgewählt';
+    imagePreview.hidden = true;
+    pendingImage = null;
+
+    render();
+  });
+
+  // ---------- Voting ----------
+
+  grid.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.vote-btn');
+    if (!btn) return;
+    const card = e.target.closest('.entry-card');
+    const id = card.dataset.id;
+    const delta = Number(btn.dataset.delta);
+    await DataStore.vote(id, delta);
+    render();
+  });
+
+  // ---------- Rendering ----------
+
+  async function render() {
+    const entries = await DataStore.getEntries();
+
+    entryCount.textContent = entries.length;
+    emptyState.classList.toggle('visible', entries.length === 0);
+
+    grid.innerHTML = entries.map((entry) => {
+      const scoreClass = entry.score > 0 ? 'positive' : entry.score < 0 ? 'negative' : '';
+      const scoreLabel = entry.score > 0 ? `+${entry.score}` : entry.score;
+      return `
+        <article class="entry-card" data-id="${entry.id}">
+          <div class="entry-image-wrap">
+            <img class="entry-image" src="${entry.image}" alt="${escapeHtml(entry.car)} auf ${escapeHtml(entry.track)}" />
+          </div>
+          <div class="entry-body">
+            <h3 class="entry-car">${escapeHtml(entry.car)}</h3>
+            <p class="entry-track">${escapeHtml(entry.track)}</p>
+          </div>
+          <div class="entry-vote">
+            <button class="vote-btn vote-down" data-delta="-1" aria-label="Downvote ${escapeHtml(entry.car)} auf ${escapeHtml(entry.track)}">${iconDown}</button>
+            <span class="vote-score ${scoreClass}">${scoreLabel}</span>
+            <button class="vote-btn vote-up" data-delta="1" aria-label="Upvote ${escapeHtml(entry.car)} auf ${escapeHtml(entry.track)}">${iconUp}</button>
+          </div>
+        </article>
+      `;
+    }).join('');
+  }
+
+  render();
+</script>
+</body>
+</html>
