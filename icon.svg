@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0b0b0d"/>
+
+  <!-- speed lines -->
+  <rect x="40" y="248" width="46" height="8" rx="4" fill="#e10600" opacity="0.35"/>
+  <rect x="40" y="270" width="66" height="8" rx="4" fill="#e10600" opacity="0.55"/>
+  <rect x="40" y="292" width="86" height="8" rx="4" fill="#e10600" opacity="0.8"/>
+
+  <!-- ground line -->
+  <rect x="70" y="366" width="372" height="7" rx="3.5" fill="#e10600" opacity="0.85"/>
+
+  <!-- rear wheel -->
+  <circle cx="150" cy="330" r="50" fill="#111318"/>
+  <circle cx="150" cy="330" r="50" fill="none" stroke="#e10600" stroke-width="6"/>
+  <circle cx="150" cy="330" r="16" fill="#2a2c32"/>
+
+  <!-- front wheel -->
+  <circle cx="400" cy="330" r="44" fill="#111318"/>
+  <circle cx="400" cy="330" r="44" fill="none" stroke="#e10600" stroke-width="6"/>
+  <circle cx="400" cy="330" r="14" fill="#2a2c32"/>
+
+  <!-- body -->
+  <path d="M100,300 L100,262 L152,262 L152,280 Q212,224 262,254 Q302,238 342,248 Q402,254 432,292 L464,292 L464,304 L100,304 Z" fill="#e10600"/>
+
+  <!-- helmet -->
+  <circle cx="248" cy="246" r="15" fill="#0b0b0d"/>
+  <circle cx="248" cy="246" r="15" fill="none" stroke="#2a2c32" stroke-width="3"/>
+</svg>

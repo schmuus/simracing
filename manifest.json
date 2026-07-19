@@ -1,0 +1,14 @@
+{
+  "name": "Apex Log – AMS2 Strecken-Log",
+  "short_name": "Apex Log",
+  "description": "Auto-Strecken-Kombinationen für Automobilista 2 loggen und bewerten.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b0b0d",
+  "theme_color": "#0b0b0d",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
