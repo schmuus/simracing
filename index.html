@@ -126,6 +126,53 @@
 
   .entries-header h2 { margin-bottom: 0; }
 
+  .search-container {
+    display: flex;
+    margin-bottom: 18px;
+    gap: 8px;
+  }
+
+  .search-input {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 11px 12px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    transition: border-color 0.15s ease;
+  }
+
+  .search-input::placeholder {
+    color: #55575e;
+  }
+
+  .search-input:focus {
+    outline: 2px solid var(--red-light);
+    outline-offset: 2px;
+    border-color: var(--red);
+  }
+
+  .search-clear-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .search-clear-btn:hover {
+    border-color: var(--red);
+    color: var(--red-light);
+  }
+
   .view-toggle {
     display: inline-flex;
     background: var(--surface-2);
@@ -650,6 +697,10 @@
         <button type="button" class="view-toggle-btn" data-mode="track">Strecke</button>
       </div>
     </div>
+    <div class="search-container">
+      <input type="text" id="search-input" class="search-input" placeholder="Nach Auto, Strecke oder Notiz suchen…" />
+      <button type="button" id="search-clear-btn" class="search-clear-btn" title="Suche löschen">✕</button>
+    </div>
     <div id="entries-grid" class="entries-body"></div>
     <p id="empty-state" class="empty-state visible">Lade Einträge …</p>
   </section>
@@ -752,11 +803,14 @@
   const viewToggleButtons = document.querySelectorAll('.view-toggle-btn');
   const carOptions = document.getElementById('car-options');
   const trackOptions = document.getElementById('track-options');
+  const searchInput = document.getElementById('search-input');
+  const searchClearBtn = document.getElementById('search-clear-btn');
 
   let pendingImage = null;
   let editingId = null;
   let currentEntries = [];
   let viewMode = 'all';
+  let searchQuery = '';
 
   const iconUp = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
   const iconDown = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
@@ -912,6 +966,34 @@
     });
   });
 
+  // ---------- Such-Funktion ----------
+
+  function matchesSearchQuery(entry, query) {
+    if (!query) return true;
+    const q = query.toLowerCase();
+    return (
+      entry.car.toLowerCase().includes(q) ||
+      entry.track.toLowerCase().includes(q) ||
+      (entry.note && entry.note.toLowerCase().includes(q))
+    );
+  }
+
+  function getFilteredEntries() {
+    return currentEntries.filter(entry => matchesSearchQuery(entry, searchQuery));
+  }
+
+  searchInput.addEventListener('input', (e) => {
+    searchQuery = e.target.value.trim();
+    renderView();
+  });
+
+  searchClearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    searchQuery = '';
+    renderView();
+    searchInput.focus();
+  });
+
   // ---------- Voting ----------
 
   grid.addEventListener('click', async (e) => {
@@ -1000,114 +1082,116 @@
           car: String(item.car),
           track: String(item.track),
           image: String(item.image),
-          score: Number.isInteger(item.score) ? item.score : 0,
-          bestTime: item.bestTime ? String(item.bestTime) : '',
-          note: item.note ? String(item.note) : '',
+          score: Number(item.score) || 0,
+          bestTime: String(item.bestTime || ''),
+          note: String(item.note || ''),
           createdAt: serverTimestamp(),
         });
       }
-      alert('Import abgeschlossen: ' + valid.length + ' Einträge hinzugefügt.');
+      importInput.value = '';
+      alert(valid.length + ' Einträge erfolgreich importiert.');
     } catch (err) {
       alert('Import fehlgeschlagen: ' + err.message);
-    } finally {
       importInput.value = '';
     }
   });
 
-  // ---------- Rendering ----------
-
-  function cardHtml(entry) {
-    const scoreClass = entry.score > 0 ? 'positive' : entry.score < 0 ? 'negative' : '';
-    const scoreLabel = entry.score > 0 ? ('+' + entry.score) : entry.score;
-    const bestTimeHtml = entry.bestTime
-      ? '<p class="entry-besttime">Bestzeit: <strong>' + escapeHtml(entry.bestTime) + '</strong></p>'
-      : '';
-    const noteHtml = entry.note
-      ? '<p class="entry-note">' + escapeHtml(entry.note) + '</p>'
-      : '';
-    const carTrackLabel = escapeHtml(entry.car) + ' auf ' + escapeHtml(entry.track);
-
-    return (
-      '<article class="entry-card" data-id="' + entry.id + '">' +
-        '<div class="entry-image-wrap">' +
-          '<img class="entry-image" src="' + entry.image + '" alt="' + carTrackLabel + '" tabindex="0" role="button" aria-label="Bild von ' + carTrackLabel + ' in Originalgröße ansehen" />' +
-        '</div>' +
-        '<div class="entry-body">' +
-          '<h3 class="entry-car">' + escapeHtml(entry.car) + '</h3>' +
-          '<p class="entry-track">' + escapeHtml(entry.track) + '</p>' +
-          bestTimeHtml +
-          noteHtml +
-        '</div>' +
-        '<div class="entry-actions">' +
-          '<button type="button" class="action-btn" data-action="edit">Bearbeiten</button>' +
-          '<button type="button" class="action-btn delete-btn" data-action="delete">Löschen</button>' +
-        '</div>' +
-        '<div class="entry-vote">' +
-          '<button class="vote-btn vote-down" data-delta="-1" aria-label="Downvote ' + carTrackLabel + '">' + iconDown + '</button>' +
-          '<span class="vote-score ' + scoreClass + '">' + scoreLabel + '</span>' +
-          '<button class="vote-btn vote-up" data-delta="1" aria-label="Upvote ' + carTrackLabel + '">' + iconUp + '</button>' +
-        '</div>' +
-      '</article>'
-    );
-  }
+  // ---------- Ansicht rendern ----------
 
   function renderView() {
-    if (viewMode === 'all') {
-      grid.innerHTML = '<div class="card-grid">' + currentEntries.map(cardHtml).join('') + '</div>';
+    const filtered = getFilteredEntries();
+    const count = filtered.length;
+
+    entryCount.textContent = count;
+
+    if (count === 0) {
+      grid.innerHTML = '';
+      emptyState.classList.add('visible');
+      emptyState.textContent = searchQuery 
+        ? 'Keine Einträge mit „' + escapeHtml(searchQuery) + '" gefunden.'
+        : 'Keine Einträge vorhanden.';
       return;
     }
 
-    const groupField = viewMode === 'car' ? 'car' : 'track';
-    const groups = new Map();
-    currentEntries.forEach((entry) => {
-      const key = entry[groupField] || '–';
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(entry);
-    });
+    emptyState.classList.remove('visible');
 
-    const sortedKeys = [...groups.keys()].sort((a, b) => a.localeCompare(b, 'de'));
+    let html = '';
 
-    grid.innerHTML = sortedKeys.map((key) => {
-      const groupEntries = groups.get(key).slice().sort((a, b) => b.score - a.score);
-      return (
-        '<div class="entry-group">' +
-          '<h3 class="group-heading">' + escapeHtml(key) + ' <span class="group-count">' + groupEntries.length + '</span></h3>' +
-          '<div class="card-grid">' + groupEntries.map(cardHtml).join('') + '</div>' +
-        '</div>'
-      );
-    }).join('');
-  }
-
-  function updateDatalists() {
-    const cars = [...new Set(currentEntries.map((e) => e.car).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'de'));
-    const tracks = [...new Set(currentEntries.map((e) => e.track).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'de'));
-    carOptions.innerHTML = cars.map((c) => '<option value="' + escapeHtml(c) + '"></option>').join('');
-    trackOptions.innerHTML = tracks.map((t) => '<option value="' + escapeHtml(t) + '"></option>').join('');
-  }
-
-  function renderEntries(entries) {
-    currentEntries = entries;
-    entryCount.textContent = entries.length;
-    emptyState.textContent = 'Noch keine Strecken-Kombination geloggt. Leg los und trag deine erste Session ein.';
-    emptyState.classList.toggle('visible', entries.length === 0);
-    updateDatalists();
-    renderView();
-  }
-
-  // Live-Listener: rendert automatisch neu, sobald sich in Firestore etwas ändert.
-  const entriesQuery = query(entriesCollection, orderBy('score', 'desc'));
-  onSnapshot(
-    entriesQuery,
-    (snapshot) => {
-      const entries = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-      renderEntries(entries);
-    },
-    (err) => {
-      console.error(err);
-      emptyState.textContent = 'Verbindung zu Firebase fehlgeschlagen. Bitte Firestore-Regeln und Projekt-Setup prüfen.';
-      emptyState.classList.add('visible');
+    if (viewMode === 'all') {
+      html = filtered.map(entry => createEntryCard(entry)).join('');
+    } else if (viewMode === 'car') {
+      const grouped = {};
+      filtered.forEach(entry => {
+        if (!grouped[entry.car]) grouped[entry.car] = [];
+        grouped[entry.car].push(entry);
+      });
+      Object.keys(grouped).sort().forEach(car => {
+        html += '<div class="entry-group">';
+        html += '<h3 class="group-heading">' + escapeHtml(car) + ' <span class="group-count">' + grouped[car].length + '</span></h3>';
+        html += grouped[car].map(entry => createEntryCard(entry)).join('');
+        html += '</div>';
+      });
+    } else if (viewMode === 'track') {
+      const grouped = {};
+      filtered.forEach(entry => {
+        if (!grouped[entry.track]) grouped[entry.track] = [];
+        grouped[entry.track].push(entry);
+      });
+      Object.keys(grouped).sort().forEach(track => {
+        html += '<div class="entry-group">';
+        html += '<h3 class="group-heading">' + escapeHtml(track) + ' <span class="group-count">' + grouped[track].length + '</span></h3>';
+        html += grouped[track].map(entry => createEntryCard(entry)).join('');
+        html += '</div>';
+      });
     }
-  );
+
+    grid.innerHTML = html;
+  }
+
+  function createEntryCard(entry) {
+    const scoreClass = entry.score > 0 ? 'positive' : entry.score < 0 ? 'negative' : '';
+    return `
+      <div class="entry-card" data-id="${entry.id}">
+        <div class="entry-image-wrap">
+          <img src="${entry.image}" alt="${escapeHtml(entry.car)} auf ${escapeHtml(entry.track)}" class="entry-image" />
+        </div>
+        <div class="entry-body">
+          <div class="entry-car">${escapeHtml(entry.car)}</div>
+          <div class="entry-track">${escapeHtml(entry.track)}</div>
+          ${entry.bestTime ? '<div class="entry-besttime">Bestzeit: <strong>' + escapeHtml(entry.bestTime) + '</strong></div>' : ''}
+          ${entry.note ? '<div class="entry-note">' + escapeHtml(entry.note) + '</div>' : ''}
+        </div>
+        <div class="entry-actions">
+          <button type="button" class="action-btn" data-action="edit">Bearbeiten</button>
+          <button type="button" class="action-btn delete-btn" data-action="delete">Löschen</button>
+        </div>
+        <div class="entry-vote">
+          <button type="button" class="vote-btn vote-up" data-delta="1" title="Upvote">${iconUp}</button>
+          <span class="vote-score ${scoreClass}">${entry.score}</span>
+          <button type="button" class="vote-btn vote-down" data-delta="-1" title="Downvote">${iconDown}</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // ---------- Firebase Listener ----------
+
+  onSnapshot(query(entriesCollection, orderBy('score', 'desc')), (snapshot) => {
+    currentEntries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    updateDataLists();
+    renderView();
+  });
+
+  function updateDataLists() {
+    const cars = new Set();
+    const tracks = new Set();
+    currentEntries.forEach(entry => {
+      cars.add(entry.car);
+      tracks.add(entry.track);
+    });
+    carOptions.innerHTML = Array.from(cars).sort().map(car => `<option value="${escapeHtml(car)}" />`).join('');
+    trackOptions.innerHTML = Array.from(tracks).sort().map(track => `<option value="${escapeHtml(track)}" />`).join('');
+  }
 </script>
 </body>
 </html>
