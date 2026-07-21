@@ -1,0 +1,1899 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Apex Log – AMS2 Strecken-Log</title>
+<link rel="icon" href="favicon.ico" sizes="any" />
+<link rel="icon" href="icon-512.png" type="image/png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0b0b0d" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Apex Log" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0b0b0d;
+    --bg-alt: #0f1013;
+    --surface: #16171b;
+    --surface-2: #1c1e23;
+    --border: #2a2c32;
+    --red: #e10600;
+    --red-light: #ff453a;
+    --text: #f2f2f0;
+    --text-muted: #8a8d93;
+    --font-display: 'Oswald', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    margin: 0;
+  }
+
+  .flag-strip {
+    height: 6px;
+    width: 100%;
+    background-image: repeating-linear-gradient(
+      90deg,
+      var(--red) 0px, var(--red) 14px,
+      #1a1a1a 14px, #1a1a1a 28px
+    );
+    opacity: 0.9;
+  }
+
+  .site-header {
+    background: linear-gradient(180deg, var(--bg-alt), var(--bg));
+    border-bottom: 1px solid var(--border);
+    padding: 28px 20px 22px;
+  }
+
+  .header-inner {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  .header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .auth-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 6px;
+    position: relative;
+  }
+
+  .auth-status {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  .login-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 50;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    min-width: 240px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  }
+
+  .login-dropdown[hidden] { display: none; }
+
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .login-dropdown-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 2px;
+  }
+
+  .login-dropdown .form-error { margin-top: 10px; }
+
+  .login-input {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    width: 100%;
+  }
+
+  .locked-message {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 0;
+  }
+
+  .eyebrow {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0 0 8px;
+  }
+
+  .logo {
+    display: block;
+    height: 64px;
+    width: auto;
+  }
+
+  .entry-panel-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0 0 18px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .entry-panel-toggle h2 { margin-bottom: 0; }
+
+  .entry-panel-chevron {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    transition: transform 0.15s ease;
+  }
+
+  .entry-panel-toggle[aria-expanded="true"] .entry-panel-chevron {
+    transform: rotate(180deg);
+  }
+
+  .entry-panel-body[hidden] { display: none; }
+
+  .entry-panel-body {
+    display: grid;
+    gap: 16px;
+  }
+
+  main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
+
+  section + section { margin-top: 44px; }
+
+  .new-entry {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 22px 26px;
+  }
+
+  .new-entry h2, .entries h2 {
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .entries-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .entries-header h2 { margin-bottom: 0; }
+
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .random-btn {
+    background: transparent;
+    border: 1px solid var(--red);
+    color: var(--red-light);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .random-btn:hover { background: var(--red); color: #fff; }
+
+  @keyframes highlightPulse {
+    0% { box-shadow: 0 0 0 0 rgba(225, 6, 0, 0.85); border-color: var(--red); }
+    100% { box-shadow: 0 0 0 16px rgba(225, 6, 0, 0); border-color: var(--border); }
+  }
+
+  .entry-card.highlight { animation: highlightPulse 1.6s ease-out; }
+
+  .stats-line {
+    margin: 8px 0 0;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .search-input {
+    width: 100%;
+    margin-top: 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+  }
+
+  .search-input::placeholder { color: #55575e; }
+
+  .search-input:focus {
+    outline: 2px solid var(--red-light);
+    outline-offset: 2px;
+  }
+
+  .search-input::-webkit-search-cancel-button { cursor: pointer; }
+
+  .view-toggle {
+    display: inline-flex;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+  }
+
+  .view-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .view-toggle-btn:hover:not(.active) { color: var(--text); }
+
+  .view-toggle-btn.active {
+    background: var(--red);
+    color: #fff;
+  }
+
+  .entries-body {
+    display: grid;
+    gap: 32px;
+    margin-top: 18px;
+  }
+
+  .entry-group {
+    display: grid;
+    gap: 14px;
+  }
+
+  .group-heading {
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .group-count {
+    font-family: var(--font-body);
+    font-size: 0.68rem;
+    font-weight: 500;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 1px 8px;
+    border-radius: 999px;
+    letter-spacing: 0;
+  }
+
+  .count-badge {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 2px 9px;
+    border-radius: 999px;
+    letter-spacing: 0;
+  }
+
+  #entry-form {
+    display: grid;
+    gap: 16px;
+  }
+
+  .field {
+    display: grid;
+    gap: 6px;
+  }
+
+  .field label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .field input[type="text"],
+  .field textarea {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 11px 12px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    resize: vertical;
+  }
+
+  .field input[type="text"]:focus,
+  .field textarea:focus,
+  .file-upload-btn:focus-visible,
+  .btn-primary:focus-visible,
+  .btn-cancel:focus-visible,
+  .link-btn:focus-visible,
+  .action-btn:focus-visible,
+  .vote-btn:focus-visible {
+    outline: 2px solid var(--red-light);
+    outline-offset: 2px;
+  }
+
+  .field input[type="text"]::placeholder,
+  .field textarea::placeholder { color: #55575e; }
+
+  .file-upload {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .file-upload input[type="file"] {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .file-upload-btn {
+    background: transparent;
+    border: 1px solid var(--red);
+    color: var(--red-light);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+    padding: 9px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .file-upload-btn:hover {
+    background: var(--red);
+    color: #fff;
+  }
+
+  .file-name {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  .image-preview {
+    margin-top: 4px;
+    width: 100%;
+    max-width: 340px;
+    aspect-ratio: 40 / 9;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+
+  .form-actions {
+    justify-self: start;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .btn-primary {
+    background: var(--red);
+    color: #fff;
+    border: none;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 12px 26px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  .btn-primary:hover { background: var(--red-light); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.6; cursor: default; }
+
+  .btn-cancel {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+  }
+
+  .btn-cancel:hover { color: var(--text); text-decoration-color: currentColor; }
+
+  .form-error {
+    font-size: 0.8rem;
+    color: var(--red-light);
+    margin: -6px 0 0;
+  }
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 18px;
+  }
+
+  .entry-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: rise 0.35s ease both;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+  }
+
+  .entry-card:hover {
+    border-color: #3a3d45;
+    transform: translateY(-2px);
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .entry-image-wrap {
+    aspect-ratio: 40 / 9;
+    background: var(--surface-2);
+    overflow: hidden;
+  }
+
+  .entry-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    cursor: zoom-in;
+    transition: opacity 0.15s ease;
+  }
+
+  .entry-image:hover { opacity: 0.88; }
+
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(6, 6, 7, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 1000;
+  }
+
+  .lightbox[hidden] { display: none; }
+
+  .lightbox-img {
+    max-width: 95vw;
+    max-height: 90vh;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  }
+
+  .lightbox-close {
+    position: absolute;
+    top: 18px;
+    right: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s ease;
+  }
+
+  .lightbox-close:hover { border-color: var(--red); color: var(--red-light); }
+
+  .entry-body {
+    padding: 14px 16px 6px;
+    flex: 1;
+  }
+
+  .entry-car {
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+  }
+
+  .entry-track {
+    margin: 4px 0 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .entry-besttime {
+    margin: 8px 0 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
+
+  .entry-besttime strong {
+    color: var(--text);
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .entry-note {
+    margin: 6px 0 0;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+    line-height: 1.4;
+  }
+
+  .entry-weather {
+    margin: 8px 0 0;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .entry-weather .weather-value { color: var(--text); }
+
+  .entry-event {
+    margin: 6px 0 0;
+    font-size: 0.78rem;
+    color: var(--red-light);
+  }
+
+  .track-events {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+  }
+
+  .track-events h2 {
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+
+  .track-events-select {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+  }
+
+  .track-events-result { margin-top: 16px; }
+
+  .track-events-empty {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  .track-events-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+  }
+
+  .track-events-list li {
+    font-size: 0.85rem;
+    color: var(--text);
+    padding: 10px 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+
+  .track-events-list li strong { color: var(--red-light); }
+
+  .track-events-note {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 14px 0 8px;
+  }
+
+  .entry-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    padding: 10px 16px 0;
+  }
+
+  .action-btn {
+    background: none;
+    border: none;
+    padding: 4px 0;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.15s ease;
+  }
+
+  .action-btn:hover { color: var(--text); }
+  .delete-btn:hover { color: var(--red-light); }
+
+  .entry-vote {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 10px 16px 16px;
+  }
+
+  .entry-vote-readonly { opacity: 0.85; }
+
+  .vote-btn {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+
+  .vote-btn svg { width: 15px; height: 15px; }
+
+  .vote-up:hover { border-color: var(--red); color: var(--red-light); }
+  .vote-down:hover { border-color: #5b5d63; color: var(--text); }
+
+  .vote-score {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.3rem;
+    min-width: 42px;
+    text-align: center;
+    position: relative;
+    padding: 2px 0;
+  }
+
+  .vote-score.positive { color: var(--red-light); }
+  .vote-score.negative { color: var(--text-muted); }
+
+  .empty-state {
+    display: none;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 40px 20px;
+  }
+
+  .empty-state.visible { display: block; }
+
+  .site-footer {
+    text-align: center;
+    color: #55575e;
+    font-size: 0.75rem;
+    padding: 20px;
+    letter-spacing: 0.02em;
+  }
+
+  .backup-links {
+    margin: 8px 0 0;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .link-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    color: #55575e;
+    font-size: 0.75rem;
+    font-family: var(--font-body);
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+  }
+
+  .link-btn:hover { color: var(--text-muted); text-decoration-color: currentColor; }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .entry-card, .btn-primary, .vote-btn, .file-upload-btn {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="flag-strip" aria-hidden="true"></div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-top">
+      <div>
+        <p class="eyebrow">Automobilista&nbsp;2 — Session Log</p>
+        <img src="logo.png" alt="Apex Log" class="logo" />
+      </div>
+      <div class="auth-bar" id="auth-bar">
+        <span id="auth-status" class="auth-status">Nicht angemeldet</span>
+        <button type="button" id="login-toggle-btn" class="link-btn">Anmelden</button>
+        <button type="button" id="logout-btn" class="link-btn" hidden>Abmelden</button>
+
+        <div class="login-dropdown" id="login-dropdown" hidden>
+          <form id="login-form" class="login-form" novalidate>
+            <input type="email" id="login-email" class="login-input" placeholder="E-Mail" autocomplete="username" required />
+            <input type="password" id="login-password" class="login-input" placeholder="Passwort" autocomplete="current-password" required />
+            <div class="login-dropdown-actions">
+              <button type="submit" class="link-btn">Login</button>
+              <button type="button" id="login-cancel-btn" class="link-btn">Abbrechen</button>
+            </div>
+          </form>
+          <p class="form-error" id="login-error" hidden></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="new-entry" aria-labelledby="new-entry-heading">
+    <button type="button" id="entry-panel-toggle" class="entry-panel-toggle" aria-expanded="false" aria-controls="entry-panel-body">
+      <h2 id="new-entry-heading">Neue Kombination eintragen</h2>
+      <span class="entry-panel-chevron" aria-hidden="true">▾</span>
+    </button>
+    <div id="entry-panel-body" class="entry-panel-body" hidden>
+      <p id="entry-form-locked" class="locked-message">Bitte anmelden, um Kombinationen einzutragen, zu bearbeiten oder zu bewerten.</p>
+      <form id="entry-form" novalidate hidden>
+      <div class="field">
+        <label for="car">Auto</label>
+        <input type="text" id="car" name="car" list="car-options" placeholder="z. B. Porsche 992 Cup" required />
+        <datalist id="car-options"></datalist>
+      </div>
+      <div class="field">
+        <label for="track">Strecke</label>
+        <input type="text" id="track" name="track" list="track-options" placeholder="z. B. Interlagos GP" required />
+        <datalist id="track-options"></datalist>
+      </div>
+      <div class="field">
+        <label for="best-time">Bestzeit (optional)</label>
+        <input type="text" id="best-time" name="bestTime" placeholder="z. B. 1:32.456" />
+      </div>
+      <div class="field">
+        <label for="note">Notiz (optional)</label>
+        <textarea id="note" name="note" rows="3" placeholder="Setup-Hinweise, Eindrücke ..."></textarea>
+      </div>
+      <div class="field">
+        <label for="image">Bild</label>
+        <div class="file-upload">
+          <input type="file" id="image" name="image" accept="image/*" />
+          <label for="image" class="file-upload-btn">Datei wählen</label>
+          <span class="file-name" id="file-name">Keine Datei ausgewählt</span>
+        </div>
+        <img id="image-preview" class="image-preview" alt="" hidden />
+      </div>
+      <p class="form-error" id="form-error" hidden></p>
+      <div class="form-actions">
+        <button type="submit" class="btn-primary" id="submit-btn">Eintragen</button>
+        <button type="button" class="btn-cancel" id="cancel-btn" hidden>Abbrechen</button>
+      </div>
+    </form>
+    </div>
+  </section>
+
+  <section class="entries" aria-labelledby="entries-heading">
+    <div class="entries-header">
+      <h2 id="entries-heading">Kombinationen <span id="entry-count" class="count-badge">0</span></h2>
+      <div class="header-controls">
+        <button type="button" id="random-btn" class="random-btn">Zufällige Kombi</button>
+        <div class="view-toggle" role="group" aria-label="Ansicht wählen">
+          <button type="button" class="view-toggle-btn active" data-mode="all">Alles</button>
+          <button type="button" class="view-toggle-btn" data-mode="car">Auto</button>
+          <button type="button" class="view-toggle-btn" data-mode="track">Strecke</button>
+        </div>
+      </div>
+    </div>
+    <p id="stats-line" class="stats-line"></p>
+    <input type="search" id="search-input" class="search-input" placeholder="Suche nach Auto, Strecke oder Notiz …" />
+    <div id="entries-grid" class="entries-body"></div>
+    <p id="empty-state" class="empty-state visible">Lade Einträge …</p>
+  </section>
+
+  <section class="track-events" aria-labelledby="track-events-heading">
+    <h2 id="track-events-heading">Reale Events pro Strecke</h2>
+    <select id="track-events-select" class="track-events-select">
+      <option value="">Strecke wählen …</option>
+    </select>
+    <div id="track-events-result" class="track-events-result"></div>
+  </section>
+</main>
+
+<div id="lightbox" class="lightbox" hidden role="dialog" aria-modal="true" aria-label="Bildvorschau">
+  <button type="button" id="lightbox-close" class="lightbox-close" aria-label="Vorschau schließen">✕</button>
+  <img id="lightbox-img" class="lightbox-img" src="" alt="" />
+</div>
+
+<footer class="site-footer">
+  <p>Gespeichert in Firebase · Live-Sync über alle Geräte</p>
+  <p class="backup-links">
+    <button type="button" id="export-btn" class="link-btn">Backup exportieren</button>
+    <span id="import-separator" aria-hidden="true">·</span>
+    <label for="import-input" id="import-label" class="link-btn">Backup importieren</label>
+    <input type="file" id="import-input" accept="application/json" class="visually-hidden" />
+  </p>
+</footer>
+
+<script type="module">
+  // ---------- Firebase Setup ----------
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+  import {
+    getFirestore, collection, addDoc, onSnapshot,
+    doc, updateDoc, deleteDoc, increment, query, orderBy, serverTimestamp,
+  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+  import {
+    getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
+  } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAMi4WgJgQsvW2vOLwfeR7oZjMhk9b89Kc",
+    authDomain: "simracing-26111.firebaseapp.com",
+    projectId: "simracing-26111",
+    storageBucket: "simracing-26111.firebasestorage.app",
+    messagingSenderId: "163037370928",
+    appId: "1:163037370928:web:ed700b9c40bc54b9e7abf5",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+  const entriesCollection = collection(db, 'entries');
+  // Bilder werden als Base64-Text direkt im Firestore-Dokument gespeichert
+  // (kein Firebase Storage / kein Blaze-Tarif nötig). Firestore-Dokumente
+  // dürfen max. 1 MB groß sein, daher die Größenprüfung weiter unten.
+
+  // Firestore-Dokumente dürfen max. 1 MB groß sein. Base64 macht Dateien ca.
+  // 1/3 größer, daher liegt die Grenze für die Rohdatei bei 700 KB.
+  const MAX_IMAGE_BYTES = 700 * 1024;
+
+  // ---------- Hilfsfunktionen ----------
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function downloadJson(filename, data) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  // ---------- DOM-Referenzen ----------
+
+  const formHeading = document.getElementById('new-entry-heading');
+  const entryPanelToggle = document.getElementById('entry-panel-toggle');
+  const entryPanelBody = document.getElementById('entry-panel-body');
+  const form = document.getElementById('entry-form');
+  const entryFormLocked = document.getElementById('entry-form-locked');
+  const carInput = document.getElementById('car');
+  const trackInput = document.getElementById('track');
+  const bestTimeInput = document.getElementById('best-time');
+  const noteInput = document.getElementById('note');
+  const imageInput = document.getElementById('image');
+  const fileNameLabel = document.getElementById('file-name');
+  const imagePreview = document.getElementById('image-preview');
+  const formError = document.getElementById('form-error');
+  const submitBtn = document.getElementById('submit-btn');
+  const cancelBtn = document.getElementById('cancel-btn');
+  const grid = document.getElementById('entries-grid');
+  const emptyState = document.getElementById('empty-state');
+  const entryCount = document.getElementById('entry-count');
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const lightboxClose = document.getElementById('lightbox-close');
+  const exportBtn = document.getElementById('export-btn');
+  const importInput = document.getElementById('import-input');
+  const importLabel = document.getElementById('import-label');
+  const importSeparator = document.getElementById('import-separator');
+  const viewToggleButtons = document.querySelectorAll('.view-toggle-btn');
+  const carOptions = document.getElementById('car-options');
+  const trackOptions = document.getElementById('track-options');
+  const statsLine = document.getElementById('stats-line');
+  const searchInput = document.getElementById('search-input');
+  const randomBtn = document.getElementById('random-btn');
+  const authStatus = document.getElementById('auth-status');
+  const loginToggleBtn = document.getElementById('login-toggle-btn');
+  const logoutBtn = document.getElementById('logout-btn');
+  const loginDropdown = document.getElementById('login-dropdown');
+  const loginForm = document.getElementById('login-form');
+  const loginCancelBtn = document.getElementById('login-cancel-btn');
+  const loginEmail = document.getElementById('login-email');
+  const loginPassword = document.getElementById('login-password');
+  const loginError = document.getElementById('login-error');
+
+  let pendingImage = null;
+  let editingId = null;
+  let currentEntries = [];
+  let currentUser = null;
+  let viewMode = 'all';
+  let searchTerm = '';
+  let recentRandomIds = [];
+
+  // ---------- Authentifizierung ----------
+  //
+  // Lesen bleibt für alle offen (Firestore-Regel "allow read: if true").
+  // Alles Schreibende (eintragen, bearbeiten, löschen, voten, importieren)
+  // ist zusätzlich in den Firestore-Regeln auf genau eine UID beschränkt –
+  // die UI-Sperre hier verhindert nur, dass die Buttons/Formulare für nicht
+  // angemeldete Personen überhaupt sichtbar/bedienbar sind.
+
+  function closeLoginDropdown() {
+    loginDropdown.hidden = true;
+    loginForm.reset();
+    loginError.hidden = true;
+  }
+
+  function updateAuthUI() {
+    if (currentUser) {
+      authStatus.textContent = 'Angemeldet als ' + currentUser.email;
+      loginToggleBtn.hidden = true;
+      logoutBtn.hidden = false;
+      closeLoginDropdown();
+      form.hidden = false;
+      entryFormLocked.hidden = true;
+      importLabel.hidden = false;
+      importSeparator.hidden = false;
+    } else {
+      authStatus.textContent = 'Nicht angemeldet';
+      loginToggleBtn.hidden = false;
+      logoutBtn.hidden = true;
+      form.hidden = true;
+      entryFormLocked.hidden = false;
+      importLabel.hidden = true;
+      importSeparator.hidden = true;
+      if (editingId) exitEditModeSafe();
+    }
+  }
+
+  // exitEditMode() wird weiter unten definiert; dieser Wrapper verhindert
+  // einen Fehler, falls updateAuthUI() vor der Definition aufgerufen wird.
+  function exitEditModeSafe() {
+    if (typeof exitEditMode === 'function') exitEditMode();
+  }
+
+  loginToggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    loginDropdown.hidden = !loginDropdown.hidden;
+    if (!loginDropdown.hidden) loginEmail.focus();
+  });
+
+  loginCancelBtn.addEventListener('click', closeLoginDropdown);
+
+  document.addEventListener('click', (e) => {
+    if (!loginDropdown.hidden && !e.target.closest('#auth-bar')) closeLoginDropdown();
+  });
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    loginError.hidden = true;
+    try {
+      await signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPassword.value);
+      closeLoginDropdown();
+    } catch (err) {
+      loginError.textContent = 'Anmeldung fehlgeschlagen: ' + err.message;
+      loginError.hidden = false;
+    }
+  });
+
+  logoutBtn.addEventListener('click', () => signOut(auth));
+
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    updateAuthUI();
+    renderView();
+  });
+
+  const iconUp = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>';
+  const iconDown = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+
+  // ---------- Live-Wetter (Open-Meteo, kostenlos, kein API-Key) ----------
+  //
+  // Bekannte reale Standorte einiger AMS2-Strecken. Liste ist nicht
+  // vollständig (AMS2 hat 60+ Strecken/Layouts) – einfach unten weitere
+  // Zeilen im gleichen Format ergänzen, um mehr Strecken abzudecken.
+  // Schlüssel = vereinfachter Streckenname, wird beim Abgleich unscharf
+  // gegen den eingetragenen Streckennamen gematcht (Groß-/Kleinschreibung,
+  // Sonderzeichen egal, Teilübereinstimmung reicht).
+  const TRACK_LOCATIONS = {
+    'interlagos': { lat: -23.7036, lon: -46.6997, label: 'São Paulo, Brasilien' , tz: 'America/Sao_Paulo' },
+    'brasilia': { lat: -15.7658, lon: -47.8975, label: 'Brasília, Brasilien' , tz: 'America/Sao_Paulo' },
+    'curitiba': { lat: -25.4950, lon: -49.2870, label: 'Curitiba, Brasilien' , tz: 'America/Sao_Paulo' },
+    'cascavel': { lat: -24.9556, lon: -53.4552, label: 'Cascavel, Brasilien' , tz: 'America/Sao_Paulo' },
+    'goiania': { lat: -16.6799, lon: -49.2550, label: 'Goiânia, Brasilien' , tz: 'America/Sao_Paulo' },
+    'londrina': { lat: -23.3103, lon: -51.1628, label: 'Londrina, Brasilien' , tz: 'America/Sao_Paulo' },
+    'taruma': { lat: -29.7175, lon: -52.4258, label: 'Santa Cruz do Sul, Brasilien' , tz: 'America/Sao_Paulo' },
+    'velo citta': { lat: -22.3707, lon: -46.9424, label: 'Mogi Guaçu, Brasilien' , tz: 'America/Sao_Paulo' },
+    'velopark': { lat: -29.8380, lon: -51.2160, label: 'Nova Santa Rita, Brasilien' , tz: 'America/Sao_Paulo' },
+    'guapore': { lat: -28.8478, lon: -51.8906, label: 'Guaporé, Brasilien' , tz: 'America/Sao_Paulo' },
+    'silverstone': { lat: 52.0786, lon: -1.0169, label: 'Silverstone, Großbritannien' , tz: 'Europe/London' },
+    'brands hatch': { lat: 51.3569, lon: 0.2601, label: 'Kent, Großbritannien' , tz: 'Europe/London' },
+    'snetterton': { lat: 52.4573, lon: 0.9478, label: 'Norfolk, Großbritannien' , tz: 'Europe/London' },
+    'oulton park': { lat: 53.1793, lon: -2.6142, label: 'Cheshire, Großbritannien' , tz: 'Europe/London' },
+    'donington': { lat: 52.8306, lon: -1.3757, label: 'Leicestershire, Großbritannien' , tz: 'Europe/London' },
+    'cadwell park': { lat: 53.3111, lon: -0.0578, label: 'Lincolnshire, Großbritannien' , tz: 'Europe/London' },
+    'knockhill': { lat: 56.1325, lon: -3.4967, label: 'Fife, Schottland' , tz: 'Europe/London' },
+    'croft': { lat: 54.4535, lon: -1.5567, label: 'North Yorkshire, Großbritannien' , tz: 'Europe/London' },
+    'zandvoort': { lat: 52.3888, lon: 4.5409, label: 'Zandvoort, Niederlande' , tz: 'Europe/Amsterdam' },
+    'spa': { lat: 50.4372, lon: 5.9714, label: 'Spa-Francorchamps, Belgien' , tz: 'Europe/Brussels' },
+    'nurburgring': { lat: 50.3356, lon: 6.9475, label: 'Nürburg, Deutschland' , tz: 'Europe/Berlin' },
+    'hockenheim': { lat: 49.3278, lon: 8.5656, label: 'Hockenheim, Deutschland' , tz: 'Europe/Berlin' },
+    'red bull ring': { lat: 47.2197, lon: 14.7647, label: 'Spielberg, Österreich' , tz: 'Europe/Vienna' },
+    'spielberg': { lat: 47.2197, lon: 14.7647, label: 'Spielberg, Österreich' , tz: 'Europe/Vienna' },
+    'algarve': { lat: 37.2307, lon: -8.6267, label: 'Portimão, Portugal' , tz: 'Europe/Lisbon' },
+    'portimao': { lat: 37.2307, lon: -8.6267, label: 'Portimão, Portugal' , tz: 'Europe/Lisbon' },
+    'barcelona': { lat: 41.5700, lon: 2.2611, label: 'Barcelona, Spanien' , tz: 'Europe/Madrid' },
+    'catalunya': { lat: 41.5700, lon: 2.2611, label: 'Barcelona, Spanien' , tz: 'Europe/Madrid' },
+    'valencia': { lat: 39.4856, lon: -0.6275, label: 'Valencia, Spanien' , tz: 'Europe/Madrid' },
+    'bathurst': { lat: -33.4536, lon: 149.5514, label: 'Bathurst, Australien' , tz: 'Australia/Sydney' },
+    'mount panorama': { lat: -33.4536, lon: 149.5514, label: 'Bathurst, Australien' , tz: 'Australia/Sydney' },
+    'sydney motorsport': { lat: -33.8103, lon: 150.8628, label: 'Sydney, Australien' , tz: 'Australia/Sydney' },
+    'sebring': { lat: 27.4547, lon: -81.3487, label: 'Sebring, USA' , tz: 'America/New_York' },
+    'road america': { lat: 43.7975, lon: -87.9917, label: 'Elkhart Lake, USA' , tz: 'America/Chicago' },
+    'long beach': { lat: 33.7701, lon: -118.1937, label: 'Long Beach, USA' , tz: 'America/Los_Angeles' },
+    'laguna seca': { lat: 36.5844, lon: -121.7530, label: 'Monterey, USA' , tz: 'America/Los_Angeles' },
+    'cota': { lat: 30.1328, lon: -97.6411, label: 'Austin, USA' , tz: 'America/Chicago' },
+    'circuit of the americas': { lat: 30.1328, lon: -97.6411, label: 'Austin, USA' , tz: 'America/Chicago' },
+    'daytona': { lat: 29.1853, lon: -81.0698, label: 'Daytona Beach, USA' , tz: 'America/New_York' },
+    'watkins glen': { lat: 42.3369, lon: -76.9272, label: 'Watkins Glen, USA' , tz: 'America/New_York' },
+    'indianapolis': { lat: 39.7950, lon: -86.2347, label: 'Indianapolis, USA' , tz: 'America/Indiana/Indianapolis' },
+    'kyalami': { lat: -25.9894, lon: 28.0731, label: 'Midrand, Südafrika' , tz: 'Africa/Johannesburg' },
+    'imola': { lat: 44.3439, lon: 11.7167, label: 'Imola, Italien' , tz: 'Europe/Rome' },
+    'mosport': { lat: 44.0492, lon: -78.6772, label: 'Oshawa, Kanada' , tz: 'America/Toronto' },
+    'canadian tire motorsport': { lat: 44.0492, lon: -78.6772, label: 'Oshawa, Kanada' , tz: 'America/Toronto' },
+    'virginia international': { lat: 36.5605, lon: -79.2050, label: 'Virginia, USA' , tz: 'America/New_York' },
+    'vir': { lat: 36.5605, lon: -79.2050, label: 'Virginia, USA' , tz: 'America/New_York' },
+  };
+
+  function normalizeKey(str) {
+    return (str || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9 ]/g, '')
+      .trim();
+  }
+
+  const TRACK_KEY_LIST = Object.keys(TRACK_LOCATIONS).map((k) => ({ raw: k, norm: normalizeKey(k) }));
+
+  function findTrackKeyFromText(text) {
+    const norm = normalizeKey(text);
+    if (!norm) return null;
+    let best = null;
+    for (const { raw, norm: keyNorm } of TRACK_KEY_LIST) {
+      if (norm.includes(keyNorm) || keyNorm.includes(norm)) {
+        if (!best || keyNorm.length > best.norm.length) best = { raw, norm: keyNorm };
+      }
+    }
+    return best ? best.raw : null;
+  }
+
+  function findTrackLocation(trackName) {
+    const key = findTrackKeyFromText(trackName);
+    return key ? TRACK_LOCATIONS[key] : null;
+  }
+
+  // ---------- Reale Motorsport-Events pro Strecke ----------
+  //
+  // Zwei Quellen, in dieser Reihenfolge:
+  // 1. Jolpica-API (Formel 1) – kostenlos, kein Key, direkt im Browser nutzbar
+  // 2. Manuell kuratierte Liste (GT World Challenge, IMSA, DTM, Supercars, 24h Nürburgring, ...)
+  //    als Fallback ohne exaktes Datum, für Serien ohne freie/sichere API.
+  // Wird einmal beim Laden der Seite abgefragt, nicht pro Karte.
+  //
+  // Hinweis: Eine Anbindung an weitere Serien (NASCAR, IndyCar, MotoGP, WEC, WRC, ...)
+  // über ocblacktop.com wurde bewusst wieder entfernt, da deren API-Key in einer rein
+  // clientseitig gehosteten App (GitHub Pages) für jeden im Quelltext sichtbar wäre.
+
+  // Fallback für Serien ohne freie API – von mir zusammengestellt, nicht
+  // live/garantiert aktuell. Nur ein Startpunkt, gerne im Code erweiterbar.
+  const CURATED_EVENTS = {
+    'spa': [{ series: 'GT World Challenge', name: '24 Hours of Spa', typical: 'meist Ende Juli' }],
+    'nurburgring': [
+      { series: 'NLS', name: '24h Nürburgring', typical: 'meist Juni' },
+      { series: 'DTM', name: 'DTM Nürburgring', typical: 'meist September' },
+    ],
+    'hockenheim': [{ series: 'DTM', name: 'DTM Hockenheim', typical: 'meist im Saisonverlauf' }],
+    'zandvoort': [{ series: 'DTM', name: 'DTM Zandvoort', typical: 'meist September' }],
+    'bathurst': [
+      { series: 'Supercars', name: 'Bathurst 1000', typical: 'meist Oktober' },
+      { series: 'GT World Challenge', name: 'Bathurst 12 Hour', typical: 'meist Februar' },
+    ],
+    'daytona': [{ series: 'IMSA', name: 'Rolex 24 at Daytona', typical: 'meist Januar' }],
+    'sebring': [{ series: 'IMSA', name: '12 Hours of Sebring', typical: 'meist März' }],
+    'road america': [{ series: 'IMSA', name: 'Road America (IMSA)', typical: 'meist August' }],
+    'watkins glen': [{ series: 'IMSA', name: 'Watkins Glen 6h (IMSA)', typical: 'meist Juni' }],
+    'long beach': [{ series: 'IndyCar/IMSA', name: 'Long Beach Grand Prix', typical: 'meist April' }],
+    'laguna seca': [{ series: 'IMSA', name: 'Laguna Seca (IMSA)', typical: 'meist Mai' }],
+    'barcelona': [{ series: 'GT World Challenge', name: 'GTWC Barcelona', typical: 'meist September' }],
+    'silverstone': [{ series: 'British GT', name: 'British GT Silverstone', typical: 'mehrmals jährlich' }],
+    'imola': [{ series: 'GT World Challenge', name: 'GTWC Imola', typical: 'meist April' }],
+  };
+
+  let motorsportEvents = [];
+  let motorsportEventsLoaded = false;
+  let motorsportEventsByTrack = new Map();
+
+  async function fetchJolpicaF1() {
+    const res = await fetch('https://api.jolpi.ca/ergast/f1/current.json');
+    if (!res.ok) throw new Error('F1-Kalender nicht verfügbar');
+    const data = await res.json();
+    const races = (data.MRData && data.MRData.RaceTable && data.MRData.RaceTable.Races) || [];
+    return races.map((race) => {
+      const dateStart = new Date(race.date + 'T' + (race.time || '00:00:00Z'));
+      return {
+        series: 'F1',
+        name: race.raceName,
+        dateStart,
+        dateEnd: dateStart,
+        locationName: (race.Circuit && race.Circuit.circuitName) || '',
+      };
+    }).filter((e) => !isNaN(e.dateStart));
+  }
+
+  async function loadMotorsportEvents() {
+    const results = [];
+
+    try {
+      results.push(...await fetchJolpicaF1());
+    } catch (err) {
+      console.error('F1-Kalender:', err);
+    }
+
+    motorsportEvents = results;
+    motorsportEventsLoaded = true;
+
+    motorsportEventsByTrack = new Map();
+    for (const event of motorsportEvents) {
+      const trackKey = findTrackKeyFromText(event.locationName);
+      if (!trackKey) continue;
+      if (!motorsportEventsByTrack.has(trackKey)) motorsportEventsByTrack.set(trackKey, []);
+      motorsportEventsByTrack.get(trackKey).push(event);
+    }
+    for (const list of motorsportEventsByTrack.values()) {
+      list.sort((a, b) => a.dateStart - b.dateStart);
+    }
+
+    refreshMotorsportLines();
+    renderTrackEventsResult();
+  }
+
+  function eventLineForTrack(trackKey) {
+    const now = new Date();
+    const liveList = motorsportEventsByTrack.get(trackKey) || [];
+    const nextLive = liveList.find((e) => e.dateEnd >= now);
+    if (nextLive) {
+      const dateStr = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(nextLive.dateStart);
+      return '🏁 ' + nextLive.series + ': ' + nextLive.name + ' – ' + dateStr;
+    }
+    const curated = CURATED_EVENTS[trackKey];
+    if (curated && curated.length > 0) {
+      return '🏁 ' + curated[0].series + ': ' + curated[0].name + ' (' + curated[0].typical + ')';
+    }
+    return '';
+  }
+
+  function refreshMotorsportLines() {
+    document.querySelectorAll('[data-event-track]').forEach((el) => {
+      const text = eventLineForTrack(el.dataset.eventTrack);
+      if (text) {
+        el.textContent = text;
+        el.hidden = false;
+      } else {
+        el.hidden = true;
+      }
+    });
+  }
+
+  // ---------- Dropdown „Reale Events pro Strecke" ----------
+
+  const trackEventsSelect = document.getElementById('track-events-select');
+  const trackEventsResult = document.getElementById('track-events-result');
+
+  function buildUniqueTrackOptions() {
+    const seen = new Map();
+    for (const [key, loc] of Object.entries(TRACK_LOCATIONS)) {
+      const coordKey = loc.lat + ',' + loc.lon;
+      if (!seen.has(coordKey)) seen.set(coordKey, { key, label: loc.label });
+    }
+    return [...seen.values()].sort((a, b) => a.label.localeCompare(b.label, 'de'));
+  }
+
+  trackEventsSelect.innerHTML = '<option value="">Strecke wählen …</option>' +
+    buildUniqueTrackOptions().map((t) => '<option value="' + t.key + '">' + escapeHtml(t.label) + '</option>').join('');
+
+  function renderTrackEventsResult() {
+    const key = trackEventsSelect.value;
+    if (!key) { trackEventsResult.innerHTML = ''; return; }
+
+    const now = new Date();
+    const live = (motorsportEventsByTrack.get(key) || []).filter((e) => e.dateEnd >= now);
+    const curated = CURATED_EVENTS[key] || [];
+
+    if (live.length === 0 && curated.length === 0) {
+      trackEventsResult.innerHTML = '<p class="track-events-empty">' +
+        (motorsportEventsLoaded ? 'Keine bekannten Events für diese Strecke.' : 'Lade Events …') +
+        '</p>';
+      return;
+    }
+
+    let html = '';
+    if (live.length > 0) {
+      html += '<ul class="track-events-list">' + live.map((e) => {
+        const dateStr = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(e.dateStart);
+        return '<li><strong>' + escapeHtml(e.series) + '</strong>: ' + escapeHtml(e.name) + ' – ' + dateStr + '</li>';
+      }).join('') + '</ul>';
+    }
+    if (curated.length > 0) {
+      html += '<p class="track-events-note">Zusätzlich üblich (nicht live bestätigt, keine exakten Daten):</p>' +
+        '<ul class="track-events-list track-events-list--curated">' + curated.map((c) =>
+          '<li><strong>' + escapeHtml(c.series) + '</strong>: ' + escapeHtml(c.name) + ' (' + escapeHtml(c.typical) + ')</li>'
+        ).join('') + '</ul>';
+    }
+    trackEventsResult.innerHTML = html;
+  }
+
+  trackEventsSelect.addEventListener('change', renderTrackEventsResult);
+
+  loadMotorsportEvents();
+
+  // Analoge Uhr-Emojis (volle Stunde), Index 0 = 12 Uhr
+  function localTimeLabel(tz) {
+    const now = new Date();
+    return new Intl.DateTimeFormat('de-DE', { timeZone: tz, hour: '2-digit', minute: '2-digit' }).format(now);
+  }
+
+  function refreshLocalTimes() {
+    document.querySelectorAll('[data-tz]').forEach((el) => {
+      el.textContent = localTimeLabel(el.dataset.tz);
+    });
+  }
+
+  setInterval(refreshLocalTimes, 30000);
+
+  const WEATHER_CODE_EMOJI = {
+    0: '☀️', 1: '☀️', 2: '⛅', 3: '☁️',
+    45: '🌫️', 48: '🌫️',
+    51: '🌦️', 53: '🌦️', 55: '🌦️',
+    61: '🌧️', 63: '🌧️', 65: '🌧️',
+    66: '🌧️', 67: '🌧️',
+    71: '❄️', 73: '❄️', 75: '❄️', 77: '❄️',
+    80: '🌦️', 81: '🌧️', 82: '🌧️',
+    85: '❄️', 86: '❄️',
+    95: '⛈️', 96: '⛈️', 99: '⛈️',
+  };
+
+  const weatherCache = new Map();
+  const WEATHER_TTL_MS = 15 * 60 * 1000;
+
+  async function fetchWeather(lat, lon) {
+    const cacheKey = lat + ',' + lon;
+    const cached = weatherCache.get(cacheKey);
+    if (cached && Date.now() - cached.time < WEATHER_TTL_MS) return cached.data;
+
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + '&current=temperature_2m,weather_code&timezone=auto';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Wetterdaten nicht verfügbar');
+    const data = await res.json();
+    weatherCache.set(cacheKey, { data, time: Date.now() });
+    return data;
+  }
+
+  async function loadWeatherForCards() {
+    const keys = new Set();
+    grid.querySelectorAll('[data-weather-key]').forEach((el) => keys.add(el.dataset.weatherKey));
+
+    for (const key of keys) {
+      const [lat, lon] = key.split(',').map(Number);
+      const targets = grid.querySelectorAll('[data-weather-key="' + key + '"] .weather-value');
+      try {
+        const data = await fetchWeather(lat, lon);
+        const temp = Math.round(data.current.temperature_2m);
+        const emoji = WEATHER_CODE_EMOJI[data.current.weather_code] || '❔';
+        const text = emoji + ' ' + temp + '°C';
+        targets.forEach((el) => { el.textContent = text; });
+      } catch (err) {
+        targets.forEach((el) => { el.textContent = 'nicht verfügbar'; });
+      }
+    }
+  }
+
+  // ---------- Bild-Auswahl ----------
+
+  imageInput.addEventListener('change', async () => {
+    const file = imageInput.files[0];
+    if (!file) {
+      fileNameLabel.textContent = editingId ? 'Aktuelles Bild bleibt erhalten' : 'Keine Datei ausgewählt';
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      imageInput.value = '';
+      formError.textContent = 'Bitte eine Bilddatei auswählen.';
+      formError.hidden = false;
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_BYTES) {
+      imageInput.value = '';
+      formError.textContent = 'Bild ist zu groß (' + Math.round(file.size / 1024) + ' KB). Maximal ' + Math.round(MAX_IMAGE_BYTES / 1024) + ' KB erlaubt.';
+      formError.hidden = false;
+      return;
+    }
+
+    fileNameLabel.textContent = file.name;
+    try {
+      pendingImage = await fileToDataUrl(file);
+      imagePreview.src = pendingImage;
+      imagePreview.hidden = false;
+      formError.hidden = true;
+    } catch (err) {
+      pendingImage = null;
+      imagePreview.hidden = true;
+      formError.textContent = err.message;
+      formError.hidden = false;
+    }
+  });
+
+  // ---------- Einklapp-Bereich „Neue Kombination eintragen" ----------
+
+  function openEntryPanel() {
+    entryPanelBody.hidden = false;
+    entryPanelToggle.setAttribute('aria-expanded', 'true');
+  }
+
+  function closeEntryPanel() {
+    entryPanelBody.hidden = true;
+    entryPanelToggle.setAttribute('aria-expanded', 'false');
+  }
+
+  entryPanelToggle.addEventListener('click', () => {
+    if (entryPanelBody.hidden) openEntryPanel(); else closeEntryPanel();
+  });
+
+  // ---------- Bearbeiten-Modus ----------
+
+  function enterEditMode(entry) {
+    editingId = entry.id;
+    carInput.value = entry.car;
+    trackInput.value = entry.track;
+    bestTimeInput.value = entry.bestTime || '';
+    noteInput.value = entry.note || '';
+    pendingImage = entry.image;
+    imagePreview.src = entry.image;
+    imagePreview.hidden = false;
+    fileNameLabel.textContent = 'Aktuelles Bild bleibt erhalten';
+    formHeading.textContent = 'Eintrag bearbeiten';
+    submitBtn.textContent = 'Aktualisieren';
+    cancelBtn.hidden = false;
+    formError.hidden = true;
+    openEntryPanel();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function exitEditMode() {
+    editingId = null;
+    form.reset();
+    pendingImage = null;
+    imagePreview.hidden = true;
+    fileNameLabel.textContent = 'Keine Datei ausgewählt';
+    formHeading.textContent = 'Neue Kombination eintragen';
+    submitBtn.textContent = 'Eintragen';
+    cancelBtn.hidden = true;
+    formError.hidden = true;
+  }
+
+  cancelBtn.addEventListener('click', exitEditMode);
+
+  // ---------- Formular absenden ----------
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    const car = carInput.value.trim();
+    const track = trackInput.value.trim();
+    const bestTime = bestTimeInput.value.trim();
+    const note = noteInput.value.trim();
+
+    if (!car || !track || !pendingImage) {
+      formError.textContent = 'Bitte Auto, Strecke und ein Bild angeben.';
+      formError.hidden = false;
+      return;
+    }
+    formError.hidden = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = editingId ? 'Wird aktualisiert …' : 'Wird gespeichert …';
+
+    const payload = { car, track, image: pendingImage, bestTime, note };
+
+    try {
+      if (editingId) {
+        await updateDoc(doc(db, 'entries', editingId), payload);
+      } else {
+        await addDoc(entriesCollection, { ...payload, score: 0, createdAt: serverTimestamp() });
+      }
+      exitEditMode();
+    } catch (err) {
+      formError.textContent = 'Fehler beim Speichern: ' + err.message;
+      formError.hidden = false;
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = editingId ? 'Aktualisieren' : 'Eintragen';
+    }
+  });
+
+  // ---------- Bild-Lightbox ----------
+
+  function openLightbox(src, alt) {
+    lightboxImg.src = src;
+    lightboxImg.alt = alt;
+    lightbox.hidden = false;
+  }
+
+  function closeLightbox() {
+    lightbox.hidden = true;
+    lightboxImg.src = '';
+  }
+
+  grid.addEventListener('click', (e) => {
+    const img = e.target.closest('.entry-image');
+    if (!img) return;
+    openLightbox(img.src, img.alt);
+  });
+
+  grid.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const img = e.target.closest('.entry-image');
+    if (!img) return;
+    e.preventDefault();
+    openLightbox(img.src, img.alt);
+  });
+
+  lightboxClose.addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', (e) => {
+    if (e.target === lightbox) closeLightbox();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !lightbox.hidden) closeLightbox();
+  });
+
+  // ---------- Zufällige Kombi ----------
+
+  randomBtn.addEventListener('click', () => {
+    if (currentEntries.length === 0) return;
+
+    let pool = currentEntries.filter((e) => !recentRandomIds.includes(e.id));
+    if (pool.length === 0) pool = currentEntries;
+
+    const picked = pool[Math.floor(Math.random() * pool.length)];
+    recentRandomIds = [...recentRandomIds, picked.id].slice(-3);
+
+    if (searchTerm) {
+      searchTerm = '';
+      searchInput.value = '';
+    }
+    renderView();
+
+    const card = grid.querySelector('[data-id="' + picked.id + '"]');
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      card.classList.remove('highlight');
+      void card.offsetWidth;
+      card.classList.add('highlight');
+      setTimeout(() => card.classList.remove('highlight'), 1600);
+    }
+  });
+
+  // ---------- Suche ----------
+
+  searchInput.addEventListener('input', () => {
+    searchTerm = searchInput.value.trim().toLowerCase();
+    renderView();
+  });
+
+  // ---------- Ansicht-Toggle ----------
+
+  viewToggleButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      viewMode = btn.dataset.mode;
+      viewToggleButtons.forEach((b) => b.classList.toggle('active', b === btn));
+      renderView();
+    });
+  });
+
+  // ---------- Voting ----------
+
+  grid.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.vote-btn');
+    if (!btn || !currentUser) return;
+    const card = e.target.closest('.entry-card');
+    const id = card.dataset.id;
+    const delta = Number(btn.dataset.delta);
+    btn.disabled = true;
+    try {
+      await updateDoc(doc(db, 'entries', id), { score: increment(delta) });
+    } catch (err) {
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---------- Bearbeiten & Löschen ----------
+
+  grid.addEventListener('click', async (e) => {
+    const editBtn = e.target.closest('[data-action="edit"]');
+    const deleteBtn = e.target.closest('[data-action="delete"]');
+    if ((!editBtn && !deleteBtn) || !currentUser) return;
+
+    const card = e.target.closest('.entry-card');
+    const id = card.dataset.id;
+
+    if (editBtn) {
+      const entry = currentEntries.find((en) => en.id === id);
+      if (entry) enterEditMode(entry);
+      return;
+    }
+
+    if (deleteBtn) {
+      const entry = currentEntries.find((en) => en.id === id);
+      const label = entry ? (entry.car + ' auf ' + entry.track) : 'diesen Eintrag';
+      if (!confirm('„' + label + '" wirklich löschen? Das kann nicht rückgängig gemacht werden.')) return;
+      try {
+        await deleteDoc(doc(db, 'entries', id));
+        if (editingId === id) exitEditMode();
+      } catch (err) {
+        alert('Löschen fehlgeschlagen: ' + err.message);
+      }
+    }
+  });
+
+  // ---------- JSON-Backup: Export ----------
+
+  exportBtn.addEventListener('click', () => {
+    const date = new Date().toISOString().slice(0, 10);
+    const data = currentEntries.map((entry) => ({
+      car: entry.car,
+      track: entry.track,
+      image: entry.image,
+      score: entry.score,
+      bestTime: entry.bestTime || '',
+      note: entry.note || '',
+    }));
+    downloadJson('apex-log-backup-' + date + '.json', data);
+  });
+
+  // ---------- JSON-Backup: Import ----------
+
+  importInput.addEventListener('change', async () => {
+    const file = importInput.files[0];
+    if (!file || !currentUser) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!Array.isArray(data)) throw new Error('Die Datei enthält keine gültige Backup-Liste.');
+
+      const valid = data.filter((item) => item && item.car && item.track && item.image);
+      if (valid.length === 0) throw new Error('Keine gültigen Einträge in der Datei gefunden.');
+
+      const proceed = confirm(
+        valid.length + ' Einträge gefunden. Wirklich importieren?\n\n' +
+        'Hinweis: Bestehende Einträge bleiben unverändert, es findet kein Abgleich statt ' +
+        '(ein zweiter Import derselben Datei erzeugt Duplikate).'
+      );
+      if (!proceed) return;
+
+      for (const item of valid) {
+        await addDoc(entriesCollection, {
+          car: String(item.car),
+          track: String(item.track),
+          image: String(item.image),
+          score: Number.isInteger(item.score) ? item.score : 0,
+          bestTime: item.bestTime ? String(item.bestTime) : '',
+          note: item.note ? String(item.note) : '',
+          createdAt: serverTimestamp(),
+        });
+      }
+      alert('Import abgeschlossen: ' + valid.length + ' Einträge hinzugefügt.');
+    } catch (err) {
+      alert('Import fehlgeschlagen: ' + err.message);
+    } finally {
+      importInput.value = '';
+    }
+  });
+
+  // ---------- Rendering ----------
+
+  function cardHtml(entry) {
+    const scoreClass = entry.score > 0 ? 'positive' : entry.score < 0 ? 'negative' : '';
+    const scoreLabel = entry.score > 0 ? ('+' + entry.score) : entry.score;
+    const bestTimeHtml = entry.bestTime
+      ? '<p class="entry-besttime">Bestzeit: <strong>' + escapeHtml(entry.bestTime) + '</strong></p>'
+      : '';
+    const noteHtml = entry.note
+      ? '<p class="entry-note">' + escapeHtml(entry.note) + '</p>'
+      : '';
+    const carTrackLabel = escapeHtml(entry.car) + ' auf ' + escapeHtml(entry.track);
+    const location = findTrackLocation(entry.track);
+    const weatherHtml = location
+      ? '<p class="entry-weather" data-weather-key="' + location.lat + ',' + location.lon + '">' +
+          escapeHtml(location.label) + ' · ' +
+          '<span class="time-value" data-tz="' + location.tz + '">' + localTimeLabel(location.tz) + '</span>' +
+          ' · <span class="weather-value">wird geladen …</span>' +
+        '</p>'
+      : '';
+
+    const trackKey = findTrackKeyFromText(entry.track);
+    const eventText = trackKey ? eventLineForTrack(trackKey) : '';
+    const motorsportHtml = trackKey
+      ? '<p class="entry-event" data-event-track="' + trackKey + '"' + (eventText ? '' : ' hidden') + '>' + escapeHtml(eventText) + '</p>'
+      : '';
+
+    const actionsHtml = currentUser
+      ? '<div class="entry-actions">' +
+          '<button type="button" class="action-btn" data-action="edit">Bearbeiten</button>' +
+          '<button type="button" class="action-btn delete-btn" data-action="delete">Löschen</button>' +
+        '</div>'
+      : '';
+
+    const voteHtml = currentUser
+      ? '<div class="entry-vote">' +
+          '<button class="vote-btn vote-down" data-delta="-1" aria-label="Downvote ' + carTrackLabel + '">' + iconDown + '</button>' +
+          '<span class="vote-score ' + scoreClass + '">' + scoreLabel + '</span>' +
+          '<button class="vote-btn vote-up" data-delta="1" aria-label="Upvote ' + carTrackLabel + '">' + iconUp + '</button>' +
+        '</div>'
+      : '<div class="entry-vote entry-vote-readonly"><span class="vote-score ' + scoreClass + '">' + scoreLabel + '</span></div>';
+
+    return (
+      '<article class="entry-card" data-id="' + entry.id + '">' +
+        '<div class="entry-image-wrap">' +
+          '<img class="entry-image" src="' + entry.image + '" alt="' + carTrackLabel + '" tabindex="0" role="button" aria-label="Bild von ' + carTrackLabel + ' in Originalgröße ansehen" />' +
+        '</div>' +
+        '<div class="entry-body">' +
+          '<h3 class="entry-car">' + escapeHtml(entry.car) + '</h3>' +
+          '<p class="entry-track">' + escapeHtml(entry.track) + '</p>' +
+          bestTimeHtml +
+          noteHtml +
+          weatherHtml +
+          motorsportHtml +
+        '</div>' +
+        actionsHtml +
+        voteHtml +
+      '</article>'
+    );
+  }
+
+  function getFilteredEntries() {
+    if (!searchTerm) return currentEntries;
+    return currentEntries.filter((entry) => {
+      const haystack = (
+        (entry.car || '') + ' ' + (entry.track || '') + ' ' + (entry.note || '')
+      ).toLowerCase();
+      return haystack.includes(searchTerm);
+    });
+  }
+
+  function renderView() {
+    const filtered = getFilteredEntries();
+
+    if (currentEntries.length > 0 && filtered.length === 0) {
+      grid.innerHTML = '<p class="empty-state visible">Keine Treffer für „' + escapeHtml(searchInput.value.trim()) + '".</p>';
+      return;
+    }
+
+    if (viewMode === 'all') {
+      grid.innerHTML = '<div class="card-grid">' + filtered.map(cardHtml).join('') + '</div>';
+      loadWeatherForCards();
+      refreshMotorsportLines();
+      return;
+    }
+
+    const groupField = viewMode === 'car' ? 'car' : 'track';
+    const groups = new Map();
+    filtered.forEach((entry) => {
+      const key = entry[groupField] || '–';
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(entry);
+    });
+
+    const sortedKeys = [...groups.keys()].sort((a, b) => a.localeCompare(b, 'de'));
+
+    grid.innerHTML = sortedKeys.map((key) => {
+      const groupEntries = groups.get(key).slice().sort((a, b) => b.score - a.score);
+      return (
+        '<div class="entry-group">' +
+          '<h3 class="group-heading">' + escapeHtml(key) + ' <span class="group-count">' + groupEntries.length + '</span></h3>' +
+          '<div class="card-grid">' + groupEntries.map(cardHtml).join('') + '</div>' +
+        '</div>'
+      );
+    }).join('');
+    loadWeatherForCards();
+    refreshMotorsportLines();
+  }
+
+  function updateDatalists() {
+    const cars = [...new Set(currentEntries.map((e) => e.car).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'de'));
+    const tracks = [...new Set(currentEntries.map((e) => e.track).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'de'));
+    carOptions.innerHTML = cars.map((c) => '<option value="' + escapeHtml(c) + '"></option>').join('');
+    trackOptions.innerHTML = tracks.map((t) => '<option value="' + escapeHtml(t) + '"></option>').join('');
+  }
+
+  function updateStatsLine() {
+    const cars = new Set(currentEntries.map((e) => e.car).filter(Boolean)).size;
+    const tracks = new Set(currentEntries.map((e) => e.track).filter(Boolean)).size;
+    statsLine.textContent = currentEntries.length + ' Kombinationen · ' + cars + ' Autos · ' + tracks + ' Strecken';
+  }
+
+  function renderEntries(entries) {
+    currentEntries = entries;
+    entryCount.textContent = entries.length;
+    emptyState.textContent = 'Noch keine Strecken-Kombination geloggt. Leg los und trag deine erste Session ein.';
+    emptyState.classList.toggle('visible', entries.length === 0);
+    updateDatalists();
+    updateStatsLine();
+    renderView();
+  }
+
+
+  // Live-Listener: rendert automatisch neu, sobald sich in Firestore etwas ändert.
+  const entriesQuery = query(entriesCollection, orderBy('score', 'desc'));
+  onSnapshot(
+    entriesQuery,
+    (snapshot) => {
+      const entries = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      renderEntries(entries);
+    },
+    (err) => {
+      console.error(err);
+      emptyState.textContent = 'Verbindung zu Firebase fehlgeschlagen. Bitte Firestore-Regeln und Projekt-Setup prüfen.';
+      emptyState.classList.add('visible');
+    }
+  );
+</script>
+</body>
+</html>
